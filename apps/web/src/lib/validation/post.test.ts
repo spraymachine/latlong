@@ -28,6 +28,22 @@ describe("postSchema", () => {
     expect(result.success).toBe(true);
   });
 
+  it("treats an explicit empty caption string as absent", () => {
+    const result = postSchema.safeParse({
+      voyageId: "a3d1fb14-4b24-4a4b-bbf0-5d36168fc8c1",
+      caption: "",
+      latitude: "18.4663",
+      longitude: "-66.1057",
+      fileName: "sunset-log.jpg",
+      contentType: "image/jpeg",
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.caption).toBeUndefined();
+    }
+  });
+
   it("rejects blank upload metadata strings", () => {
     const result = postSchema.safeParse({
       voyageId: "a3d1fb14-4b24-4a4b-bbf0-5d36168fc8c1",

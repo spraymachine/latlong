@@ -32,6 +32,24 @@ describe("voyageSchema", () => {
     expect(result.success).toBe(true);
   });
 
+  it("treats an explicit empty description string as absent", () => {
+    const result = voyageSchema.safeParse({
+      title: "Pacific Crossing",
+      description: "",
+      startName: "San Francisco",
+      startLatitude: "37.7749",
+      startLongitude: "-122.4194",
+      endName: "Honolulu",
+      endLatitude: "21.3099",
+      endLongitude: "-157.8581",
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.description).toBeUndefined();
+    }
+  });
+
   it("enforces the planned title, description, and location-name bounds", () => {
     const titleTooShort = voyageSchema.safeParse({
       title: "Go",

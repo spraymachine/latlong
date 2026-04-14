@@ -12,16 +12,19 @@ export type Database = {
       profiles: {
         Row: {
           id: string;
+          display_name: string;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id: string;
+          display_name?: string;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
+          display_name?: string;
           created_at?: string;
           updated_at?: string;
         };
