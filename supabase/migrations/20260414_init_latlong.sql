@@ -19,7 +19,7 @@ create table if not exists public.profiles (
 
 create table if not exists public.voyages (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users (id) on delete cascade,
+  user_id uuid not null references public.profiles (id) on delete cascade,
   title text not null,
   description text not null default '',
   start_name text not null,
@@ -42,7 +42,7 @@ create table if not exists public.voyages (
 create table if not exists public.posts (
   id uuid primary key default gen_random_uuid(),
   voyage_id uuid not null,
-  user_id uuid not null,
+  user_id uuid not null references public.profiles (id) on delete cascade,
   image_path text not null,
   caption text not null default '',
   latitude double precision not null,
@@ -169,4 +169,29 @@ create policy "voyage photos can be inserted by their owner"
 on storage.objects
 for insert
 to authenticated
-with check (bucket_id = 'voyage-photos');
+with check (
+  bucket_id = 'voyage-photos'
+  and name like auth.uid()::text || '/%'
+);
+
+create policy "voyage photos can be updated by their owner"
+on storage.objects
+for update
+to authenticated
+using (
+  bucket_id = 'voyage-photos'
+  and name like auth.uid()::text || '/%'
+)
+with check (
+  bucket_id = 'voyage-photos'
+  and name like auth.uid()::text || '/%'
+);
+
+create policy "voyage photos can be deleted by their owner"
+on storage.objects
+for delete
+to authenticated
+using (
+  bucket_id = 'voyage-photos'
+  and name like auth.uid()::text || '/%'
+);
