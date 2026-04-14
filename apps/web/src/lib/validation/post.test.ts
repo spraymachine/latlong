@@ -39,4 +39,17 @@ describe("postSchema", () => {
 
     expect(result.success).toBe(false);
   });
+
+  it("enforces the planned caption length limit", () => {
+    const result = postSchema.safeParse({
+      voyageId: "a3d1fb14-4b24-4a4b-bbf0-5d36168fc8c1",
+      caption: "x".repeat(281),
+      latitude: "18.4663",
+      longitude: "-66.1057",
+      fileName: "sunset-log.jpg",
+      contentType: "image/jpeg",
+    });
+
+    expect(result.success).toBe(false);
+  });
 });
