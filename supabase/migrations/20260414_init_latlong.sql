@@ -168,29 +168,4 @@ create policy "voyage photos can be inserted by their owner"
 on storage.objects
 for insert
 to authenticated
-with check (
-  bucket_id = 'voyage-photos'
-  and (storage.foldername(name))[1] = auth.uid()::text
-);
-
-create policy "voyage photos can be updated by their owner"
-on storage.objects
-for update
-to authenticated
-using (
-  bucket_id = 'voyage-photos'
-  and (storage.foldername(name))[1] = auth.uid()::text
-)
-with check (
-  bucket_id = 'voyage-photos'
-  and (storage.foldername(name))[1] = auth.uid()::text
-);
-
-create policy "voyage photos can be deleted by their owner"
-on storage.objects
-for delete
-to authenticated
-using (
-  bucket_id = 'voyage-photos'
-  and (storage.foldername(name))[1] = auth.uid()::text
-);
+with check (bucket_id = 'voyage-photos');

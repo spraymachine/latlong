@@ -1,10 +1,10 @@
 import { z } from "zod";
 
-const coordinateSchema = z.number().finite();
+const coordinateSchema = z.coerce.number().finite();
 
 export const voyageSchema = z.object({
   title: z.string().trim().min(1).max(120),
-  description: z.string().trim().min(1).max(2000),
+  description: z.string().trim().min(1).max(2000).optional(),
   startName: z.string().trim().min(1).max(120),
   startLatitude: coordinateSchema.gte(-90).lte(90),
   startLongitude: coordinateSchema.gte(-180).lte(180),

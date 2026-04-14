@@ -7,8 +7,8 @@ describe("postSchema", () => {
     const result = postSchema.safeParse({
       voyageId: "a3d1fb14-4b24-4a4b-bbf0-5d36168fc8c1",
       caption: "Trade winds filled in by sunset.",
-      latitude: 18.4663,
-      longitude: -66.1057,
+      latitude: "18.4663",
+      longitude: "-66.1057",
       fileName: "sunset-log.jpg",
       contentType: "image/jpeg",
     });
@@ -16,14 +16,25 @@ describe("postSchema", () => {
     expect(result.success).toBe(true);
   });
 
-  it("rejects unsupported upload content types", () => {
+  it("accepts a missing caption and plain non-empty file metadata strings", () => {
     const result = postSchema.safeParse({
       voyageId: "a3d1fb14-4b24-4a4b-bbf0-5d36168fc8c1",
-      caption: "Radar export",
-      latitude: 18.4663,
-      longitude: -66.1057,
-      fileName: "track.csv",
+      latitude: "18.4663",
+      longitude: "-66.1057",
+      fileName: "track export (1).csv",
       contentType: "text/csv",
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects blank upload metadata strings", () => {
+    const result = postSchema.safeParse({
+      voyageId: "a3d1fb14-4b24-4a4b-bbf0-5d36168fc8c1",
+      latitude: "18.4663",
+      longitude: "-66.1057",
+      fileName: "   ",
+      contentType: "",
     });
 
     expect(result.success).toBe(false);

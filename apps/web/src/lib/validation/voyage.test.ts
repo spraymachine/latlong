@@ -8,11 +8,25 @@ describe("voyageSchema", () => {
       title: "Pacific Crossing",
       description: "Spring shakedown from the bay to the islands.",
       startName: "San Francisco",
-      startLatitude: 37.7749,
-      startLongitude: -122.4194,
+      startLatitude: "37.7749",
+      startLongitude: "-122.4194",
       endName: "Honolulu",
-      endLatitude: 21.3099,
-      endLongitude: -157.8581,
+      endLatitude: "21.3099",
+      endLongitude: "-157.8581",
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts a missing description for forms that omit it", () => {
+    const result = voyageSchema.safeParse({
+      title: "Pacific Crossing",
+      startName: "San Francisco",
+      startLatitude: "37.7749",
+      startLongitude: "-122.4194",
+      endName: "Honolulu",
+      endLatitude: "21.3099",
+      endLongitude: "-157.8581",
     });
 
     expect(result.success).toBe(true);
@@ -23,11 +37,11 @@ describe("voyageSchema", () => {
       title: "Invalid Route",
       description: "Bad coordinates should not pass validation.",
       startName: "Start",
-      startLatitude: 95,
-      startLongitude: -122.4194,
+      startLatitude: "95",
+      startLongitude: "-122.4194",
       endName: "End",
-      endLatitude: 21.3099,
-      endLongitude: -190,
+      endLatitude: "21.3099",
+      endLongitude: "-190",
     });
 
     expect(result.success).toBe(false);
