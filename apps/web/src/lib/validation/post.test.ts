@@ -16,13 +16,13 @@ describe("postSchema", () => {
     expect(result.success).toBe(true);
   });
 
-  it("accepts a missing caption and plain non-empty file metadata strings", () => {
+  it("accepts a missing caption when the upload metadata describes an image", () => {
     const result = postSchema.safeParse({
       voyageId: "a3d1fb14-4b24-4a4b-bbf0-5d36168fc8c1",
       latitude: "18.4663",
       longitude: "-66.1057",
-      fileName: "track export (1).csv",
-      contentType: "text/csv",
+      fileName: "deck-log.webp",
+      contentType: "image/webp",
     });
 
     expect(result.success).toBe(true);
@@ -44,7 +44,7 @@ describe("postSchema", () => {
     }
   });
 
-  it("rejects blank upload metadata strings", () => {
+  it("rejects blank upload metadata strings and non-image uploads", () => {
     const result = postSchema.safeParse({
       voyageId: "a3d1fb14-4b24-4a4b-bbf0-5d36168fc8c1",
       latitude: "18.4663",
@@ -52,8 +52,16 @@ describe("postSchema", () => {
       fileName: "   ",
       contentType: "",
     });
+    const nonImageResult = postSchema.safeParse({
+      voyageId: "a3d1fb14-4b24-4a4b-bbf0-5d36168fc8c1",
+      latitude: "18.4663",
+      longitude: "-66.1057",
+      fileName: "track-export.csv",
+      contentType: "text/csv",
+    });
 
     expect(result.success).toBe(false);
+    expect(nonImageResult.success).toBe(false);
   });
 
   it("enforces the planned caption length limit", () => {

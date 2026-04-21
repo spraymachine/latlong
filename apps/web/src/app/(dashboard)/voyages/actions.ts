@@ -10,6 +10,28 @@ function redirectWithError(path: string, message: string): never {
   redirect(`${path}?error=${encodeURIComponent(message)}`)
 }
 
+async function ensureProfileForUser(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  user: {
+    id: string
+    email?: string | null
+    user_metadata?: Record<string, unknown>
+  },
+) {
+  const displayName =
+    typeof user.user_metadata?.display_name === "string" &&
+    user.user_metadata.display_name.trim().length >= 2
+      ? user.user_metadata.display_name.trim()
+      : user.email?.split("@")[0] || "Navigator"
+
+  const { error } = await supabase.from("profiles").upsert({
+    id: user.id,
+    display_name: displayName,
+  })
+
+  return error
+}
+
 export async function createVoyageAction(formData: FormData) {
   const parsed = voyageSchema.safeParse({
     title: formData.get("title"),
@@ -23,7 +45,7 @@ export async function createVoyageAction(formData: FormData) {
   })
 
   if (!parsed.success) {
-    redirectWithError("/dashboard/voyages/new", "Check the voyage details and try again.")
+    redirectWithError("/voyages/new", "Check the voyage details and try again.")
   }
 
   const supabase = await createServerSupabaseClient()
@@ -33,6 +55,12 @@ export async function createVoyageAction(formData: FormData) {
 
   if (!user) {
     redirect("/sign-in")
+  }
+
+  const profileError = await ensureProfileForUser(supabase, user)
+
+  if (profileError) {
+    redirectWithError("/voyages/new", profileError.message)
   }
 
   const { data, error } = await supabase
@@ -52,7 +80,7 @@ export async function createVoyageAction(formData: FormData) {
     .single()
 
   if (error || !data) {
-    redirectWithError("/dashboard/voyages/new", error?.message || "Could not create that voyage.")
+    redirectWithError("/voyages/new", error?.message || "Could not create that voyage.")
   }
 
   redirect(`/voyages/${data.id}`)

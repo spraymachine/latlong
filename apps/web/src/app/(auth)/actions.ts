@@ -18,6 +18,28 @@ function redirectWithError(path: string, message: string): never {
   redirect(`${path}?error=${encodeURIComponent(message)}`)
 }
 
+async function ensureProfileForUser(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  user: {
+    id: string
+    email?: string | null
+    user_metadata?: Record<string, unknown>
+  },
+) {
+  const displayName =
+    typeof user.user_metadata?.display_name === "string" &&
+    user.user_metadata.display_name.trim().length >= 2
+      ? user.user_metadata.display_name.trim()
+      : user.email?.split("@")[0] || "Navigator"
+
+  const { error } = await supabase.from("profiles").upsert({
+    id: user.id,
+    display_name: displayName,
+  })
+
+  return error
+}
+
 export async function signUpAction(formData: FormData) {
   const parsed = signUpSchema.safeParse({
     displayName: formData.get("displayName"),
@@ -44,9 +66,13 @@ export async function signUpAction(formData: FormData) {
     redirectWithError("/sign-up", error?.message || "Could not create your account.")
   }
 
-  const { error: profileError } = await supabase.from("profiles").upsert({
+  const profileError = await ensureProfileForUser(supabase, {
     id: data.user.id,
-    display_name: parsed.data.displayName,
+    email: data.user.email,
+    user_metadata: {
+      ...data.user.user_metadata,
+      display_name: parsed.data.displayName,
+    },
   })
 
   if (profileError) {
@@ -67,13 +93,21 @@ export async function signInAction(formData: FormData) {
   }
 
   const supabase = await createServerSupabaseClient()
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email: parsed.data.email,
     password: parsed.data.password,
   })
 
   if (error) {
     redirectWithError("/sign-in", error.message || "Could not sign you in.")
+  }
+
+  if (data.user) {
+    const profileError = await ensureProfileForUser(supabase, data.user)
+
+    if (profileError) {
+      redirectWithError("/sign-in", profileError.message)
+    }
   }
 
   redirect("/dashboard")

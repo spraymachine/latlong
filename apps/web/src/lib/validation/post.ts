@@ -20,7 +20,7 @@ export const postSchema = z.object({
   latitude: coordinateSchema.gte(-90).lte(90),
   longitude: coordinateSchema.gte(-180).lte(180),
   fileName: z.string().trim().min(1),
-  contentType: z.string().trim().min(1),
+  contentType: z.string().trim().startsWith("image/"),
 });
 
 export type PostInput = z.infer<typeof postSchema>;

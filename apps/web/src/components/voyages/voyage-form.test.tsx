@@ -19,4 +19,21 @@ describe("VoyageForm", () => {
       screen.getByRole("button", { name: "Create voyage" }),
     ).toBeInTheDocument();
   });
+
+  it("can render prefilled test voyage values", () => {
+    render(
+      <VoyageForm
+        action={vi.fn()}
+        initialValues={{
+          title: "Arabian Sea Night Run",
+          startName: "Kochi",
+          endName: "Muscat",
+        }}
+      />,
+    );
+
+    expect(screen.getByDisplayValue("Arabian Sea Night Run")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Kochi")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Muscat")).toBeInTheDocument();
+  });
 });

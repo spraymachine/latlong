@@ -23,9 +23,32 @@ import { Textarea } from "@/components/ui/textarea"
 
 type VoyageFormAction = (formData: FormData) => void | Promise<void>
 
+type VoyageFormValues = {
+  title: string
+  description: string
+  startName: string
+  startLatitude: string
+  startLongitude: string
+  endName: string
+  endLatitude: string
+  endLongitude: string
+}
+
 type VoyageFormProps = {
   action: VoyageFormAction
   className?: string
+  initialValues?: Partial<VoyageFormValues>
+}
+
+const EMPTY_VALUES: VoyageFormValues = {
+  title: "",
+  description: "",
+  startName: "",
+  startLatitude: "",
+  startLongitude: "",
+  endName: "",
+  endLatitude: "",
+  endLongitude: "",
 }
 
 function VoyageCoordinateField({
@@ -33,11 +56,13 @@ function VoyageCoordinateField({
   label,
   description,
   inputMode = "decimal",
+  defaultValue,
 }: {
   id: string
   label: string
   description: string
   inputMode?: "decimal" | "text" | "numeric" | "tel" | "search" | "email" | "url"
+  defaultValue?: string
 }) {
   return (
     <Field className="gap-2">
@@ -52,6 +77,7 @@ function VoyageCoordinateField({
           inputMode={inputMode}
           step="any"
           required
+          defaultValue={defaultValue}
           placeholder="0.0000"
           className="border-white/12 bg-white/5 text-[#fff7e8] placeholder:text-[#b2c1cd]/70 focus-visible:border-[#8ed3ef] focus-visible:ring-[#8ed3ef]/30"
         />
@@ -63,7 +89,12 @@ function VoyageCoordinateField({
   )
 }
 
-export function VoyageForm({ action, className }: VoyageFormProps) {
+export function VoyageForm({ action, className, initialValues }: VoyageFormProps) {
+  const values = {
+    ...EMPTY_VALUES,
+    ...initialValues,
+  }
+
   return (
     <form action={action} className={className}>
       <Card className="border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] text-[#f4efe3] shadow-[0_24px_90px_rgba(2,12,22,0.35)]">
@@ -87,6 +118,7 @@ export function VoyageForm({ action, className }: VoyageFormProps) {
                   id="title"
                   name="title"
                   required
+                  defaultValue={values.title}
                   placeholder="Northbound across the blue line"
                   className="border-white/12 bg-white/5 text-[#fff7e8] placeholder:text-[#b2c1cd]/70 focus-visible:border-[#8ed3ef] focus-visible:ring-[#8ed3ef]/30"
                 />
@@ -105,6 +137,7 @@ export function VoyageForm({ action, className }: VoyageFormProps) {
                   id="description"
                   name="description"
                   rows={4}
+                  defaultValue={values.description}
                   placeholder="Weather, intent, crew notes, or anything else that frames the voyage."
                   className="border-white/12 bg-white/5 text-[#fff7e8] placeholder:text-[#b2c1cd]/70 focus-visible:border-[#8ed3ef] focus-visible:ring-[#8ed3ef]/30"
                 />
@@ -129,6 +162,7 @@ export function VoyageForm({ action, className }: VoyageFormProps) {
                       id="startName"
                       name="startName"
                       required
+                      defaultValue={values.startName}
                       placeholder="San Juan"
                       className="border-white/12 bg-white/5 text-[#fff7e8] placeholder:text-[#b2c1cd]/70 focus-visible:border-[#8ed3ef] focus-visible:ring-[#8ed3ef]/30"
                     />
@@ -142,12 +176,14 @@ export function VoyageForm({ action, className }: VoyageFormProps) {
                   id="startLatitude"
                   label="Departure latitude"
                   description="Latitude for the departure point. Positive numbers are north."
+                  defaultValue={values.startLatitude}
                 />
 
                 <VoyageCoordinateField
                   id="startLongitude"
                   label="Departure longitude"
                   description="Longitude for the departure point. Positive numbers are east."
+                  defaultValue={values.startLongitude}
                 />
               </FieldSet>
 
@@ -161,6 +197,7 @@ export function VoyageForm({ action, className }: VoyageFormProps) {
                       id="endName"
                       name="endName"
                       required
+                      defaultValue={values.endName}
                       placeholder="Bermuda"
                       className="border-white/12 bg-white/5 text-[#fff7e8] placeholder:text-[#b2c1cd]/70 focus-visible:border-[#8ed3ef] focus-visible:ring-[#8ed3ef]/30"
                     />
@@ -174,12 +211,14 @@ export function VoyageForm({ action, className }: VoyageFormProps) {
                   id="endLatitude"
                   label="Arrival latitude"
                   description="Latitude for the arrival point."
+                  defaultValue={values.endLatitude}
                 />
 
                 <VoyageCoordinateField
                   id="endLongitude"
                   label="Arrival longitude"
                   description="Longitude for the arrival point."
+                  defaultValue={values.endLongitude}
                 />
               </FieldSet>
             </div>

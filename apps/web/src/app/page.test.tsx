@@ -3,10 +3,23 @@ import { describe, expect, it, vi } from "vitest";
 
 import HomePage from "./page";
 
+vi.mock("@/lib/supabase/server", () => ({
+  createServerSupabaseClient: vi.fn(async () => ({
+    auth: {
+      getUser: vi.fn(async () => ({
+        data: {
+          user: null,
+        },
+      })),
+    },
+  })),
+}));
+
 vi.mock("@/lib/data/public-feed", () => ({
   getPublicFeed: vi.fn(async () => [
     {
       id: "voyage-1",
+      userId: "user-1",
       title: "Northbound Through Glass Water",
       description: "A measured run across calm weather and bright dusk.",
       authorName: "Asha Rowan",
@@ -63,24 +76,20 @@ vi.mock("@/lib/data/public-feed", () => ({
 }));
 
 vi.mock("@/components/map/public-ocean-map", () => ({
-  PublicOceanMap: ({ voyages }: { voyages: Array<{ title: string }> }) => (
-    <div data-testid="public-ocean-map">{voyages[0]?.title}</div>
-  ),
+  PublicOceanMap: () => <div data-testid="public-ocean-map" />,
 }));
 
 describe("HomePage", () => {
-  it("renders the public voyage feed shell", async () => {
+  it("renders only the public ocean globe on the homepage", async () => {
     render(await HomePage());
 
+    expect(screen.getByTestId("public-ocean-map")).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", {
+      screen.queryByRole("heading", {
         name: /routes told in tides, coordinates, and compressed light/i,
       }),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/shared ocean map/i)).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: /northbound through glass water/i }),
-    ).toBeInTheDocument();
-    expect(screen.getByTestId("public-ocean-map")).toBeInTheDocument();
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/shared ocean map/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
   });
 });
