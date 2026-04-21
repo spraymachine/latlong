@@ -1,9 +1,22 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { createClient } from "@supabase/supabase-js";
 
 import { PublicOceanMap } from "@/components/map/public-ocean-map";
 import { getPublicVoyage } from "@/lib/data/public-feed";
+
+export async function generateStaticParams() {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return [];
+  }
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  );
+  const { data } = await supabase.from("voyages").select("id");
+  return (data ?? []).map(({ id }: { id: string }) => ({ voyageId: id }));
+}
 
 type VoyageDetailPageProps = {
   params: Promise<{
@@ -51,6 +64,8 @@ export default async function VoyageDetailPage({
   if (!voyage) {
     notFound();
   }
+
+  const isOwner = false;
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#061421] text-[#f4efe3]">
@@ -102,6 +117,16 @@ export default async function VoyageDetailPage({
                 </p>
               </div>
             </div>
+            {isOwner ? (
+              <div className="mt-6">
+                <Link
+                  href={`/dashboard/voyages/${voyage.id}/publish`}
+                  className="inline-flex items-center rounded-full border border-[#f4c776]/30 bg-[#f4c776]/10 px-5 py-3 text-[0.72rem] uppercase tracking-[0.26em] text-[#fff2cd] transition hover:bg-[#f4c776]/16"
+                >
+                  Publish another signal
+                </Link>
+              </div>
+            ) : null}
           </div>
 
           <PublicOceanMap

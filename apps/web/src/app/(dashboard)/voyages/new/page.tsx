@@ -1,19 +1,83 @@
+"use client"
+
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { buttonVariants } from "@/components/ui/button"
 import { VoyageForm } from "@/components/voyages/voyage-form"
+import { createBrowserSupabaseClient } from "@/lib/supabase/browser"
+import { voyageSchema } from "@/lib/validation/voyage"
 
-import { createVoyageAction } from "../actions"
-
-type NewVoyagePageProps = {
-  searchParams?: {
-    error?: string
-  }
+const TEST_VOYAGE_DEFAULTS = {
+  title: "Arabian Sea Night Run",
+  description:
+    "First trial route for LatLong. Calm departure, steady overnight run, and a sunrise landfall.",
+  startName: "Kochi",
+  startLatitude: "9.9667",
+  startLongitude: "76.2833",
+  endName: "Muscat",
+  endLatitude: "23.5880",
+  endLongitude: "58.3829",
 }
 
-export default function NewVoyagePage({ searchParams }: NewVoyagePageProps) {
-  const errorMessage = searchParams?.error ? decodeURIComponent(searchParams.error) : null
+export default function NewVoyagePage() {
+  const router = useRouter()
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleCreateVoyage(formData: FormData) {
+    setError(null)
+
+    const parsed = voyageSchema.safeParse({
+      title: formData.get("title"),
+      description: formData.get("description"),
+      startName: formData.get("startName"),
+      startLatitude: formData.get("startLatitude"),
+      startLongitude: formData.get("startLongitude"),
+      endName: formData.get("endName"),
+      endLatitude: formData.get("endLatitude"),
+      endLongitude: formData.get("endLongitude"),
+    })
+
+    if (!parsed.success) {
+      setError("Check the voyage details and try again.")
+      return
+    }
+
+    const supabase = createBrowserSupabaseClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      router.push("/sign-in")
+      return
+    }
+
+    const { data, error: dbError } = await supabase
+      .from("voyages")
+      .insert({
+        user_id: user.id,
+        title: parsed.data.title,
+        description: parsed.data.description,
+        start_name: parsed.data.startName,
+        start_latitude: parsed.data.startLatitude,
+        start_longitude: parsed.data.startLongitude,
+        end_name: parsed.data.endName,
+        end_latitude: parsed.data.endLatitude,
+        end_longitude: parsed.data.endLongitude,
+      })
+      .select("id")
+      .single()
+
+    if (dbError || !data) {
+      setError(dbError?.message || "Could not create that voyage.")
+      return
+    }
+
+    router.push(`/voyages/${data.id}`)
+  }
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#061421] text-[#f4efe3]">
@@ -45,14 +109,14 @@ export default function NewVoyagePage({ searchParams }: NewVoyagePageProps) {
           </p>
         </section>
 
-        {errorMessage ? (
+        {error ? (
           <Alert className="border-[#f0b86a]/25 bg-[#f0b86a]/8 text-[#fff7e8]">
             <AlertTitle>Voyage not saved</AlertTitle>
-            <AlertDescription>{errorMessage}</AlertDescription>
+            <AlertDescription>{error}</AlertDescription>
           </Alert>
         ) : null}
 
-        <VoyageForm action={createVoyageAction} />
+        <VoyageForm action={handleCreateVoyage} initialValues={TEST_VOYAGE_DEFAULTS} />
       </div>
     </main>
   )

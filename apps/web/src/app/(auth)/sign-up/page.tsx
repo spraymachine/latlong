@@ -1,3 +1,7 @@
+"use client"
+
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -5,17 +9,53 @@ import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { createBrowserSupabaseClient } from "@/lib/supabase/browser"
 
-import { signUpAction } from "../actions"
+export default function SignUpPage() {
+  const router = useRouter()
+  const [error, setError] = useState<string | null>(null)
+  const [pending, setPending] = useState(false)
 
-type SignUpPageProps = {
-  searchParams?: {
-    error?: string
+  async function handleSignUp(formData: FormData) {
+    setPending(true)
+    setError(null)
+
+    const displayName = String(formData.get("displayName") ?? "").trim()
+    const email = String(formData.get("email") ?? "").trim()
+    const password = String(formData.get("password") ?? "")
+
+    if (!displayName || displayName.length < 2) {
+      setError("Display name must be at least 2 characters.")
+      setPending(false)
+      return
+    }
+    if (!email || !password) {
+      setError("Check the captain details and try again.")
+      setPending(false)
+      return
+    }
+
+    const supabase = createBrowserSupabaseClient()
+    const { data, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { display_name: displayName } },
+    })
+
+    if (authError || !data.user) {
+      setError(authError?.message || "Could not create your account.")
+      setPending(false)
+      return
+    }
+
+    await supabase.from("profiles").upsert({
+      id: data.user.id,
+      display_name: displayName,
+    })
+
+    router.push("/dashboard")
+    router.refresh()
   }
-}
-
-export default function SignUpPage({ searchParams }: SignUpPageProps) {
-  const errorMessage = searchParams?.error ?? null
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#061421] text-[#f4efe3]">
@@ -66,14 +106,14 @@ export default function SignUpPage({ searchParams }: SignUpPageProps) {
           </CardHeader>
 
           <CardContent className="pt-6">
-            {errorMessage ? (
+            {error ? (
               <Alert className="mb-5 border-[#f0b86a]/25 bg-[#f0b86a]/8 text-[#fff7e8]">
                 <AlertTitle>Could not create account</AlertTitle>
-                <AlertDescription>{errorMessage}</AlertDescription>
+                <AlertDescription>{error}</AlertDescription>
               </Alert>
             ) : null}
 
-            <form action={signUpAction} className="grid gap-5">
+            <form action={handleSignUp} className="grid gap-5">
               <div className="grid gap-2">
                 <Label htmlFor="displayName">Display name</Label>
                 <Input
@@ -116,10 +156,11 @@ export default function SignUpPage({ searchParams }: SignUpPageProps) {
 
               <Button
                 type="submit"
+                disabled={pending}
                 size="lg"
                 className="mt-1 bg-[#8ed3ef] text-[#03202d] hover:bg-[#a8def1]"
               >
-                Create account
+                {pending ? "Creating account…" : "Create account"}
               </Button>
             </form>
 

@@ -1,11 +1,15 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { redirect } from "next/navigation"
 
 import { Badge } from "@/components/ui/badge"
 import { buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { getDashboardData } from "@/lib/data/dashboard"
+import { createBrowserSupabaseClient } from "@/lib/supabase/browser"
+import type { DashboardData, DashboardVoyage } from "@/lib/data/dashboard"
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en", {
@@ -15,13 +19,75 @@ function formatDate(value: string) {
   }).format(new Date(value))
 }
 
-export default async function DashboardPage() {
-  const { user, voyages } = await getDashboardData()
+export default function DashboardPage() {
+  const router = useRouter()
+  const [data, setData] = useState<DashboardData | null>(null)
 
-  if (!user) {
-    redirect("/sign-in")
+  useEffect(() => {
+    async function load() {
+      const supabase = createBrowserSupabaseClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (!user) {
+        router.replace("/sign-in")
+        return
+      }
+
+      const [{ data: profile }, { data: voyageRows }] = await Promise.all([
+        supabase.from("profiles").select("display_name").eq("id", user.id).maybeSingle(),
+        supabase
+          .from("voyages")
+          .select(
+            "id, user_id, title, description, start_name, start_latitude, start_longitude, end_name, end_latitude, end_longitude, created_at, updated_at",
+          )
+          .eq("user_id", user.id)
+          .order("updated_at", { ascending: false }),
+      ])
+
+      const voyages: DashboardVoyage[] = ((voyageRows ?? []) as Array<Record<string, unknown>>).map((row) => ({
+        id: row.id as string,
+        userId: row.user_id as string,
+        title: row.title as string,
+        description: ((row.description as string | null) ?? "").trim(),
+        startName: row.start_name as string,
+        startLatitude: row.start_latitude as number,
+        startLongitude: row.start_longitude as number,
+        endName: row.end_name as string,
+        endLatitude: row.end_latitude as number,
+        endLongitude: row.end_longitude as number,
+        createdAt: row.created_at as string,
+        updatedAt: row.updated_at as string,
+      }))
+
+      setData({
+        user: {
+          id: user.id,
+          email: user.email ?? "",
+          displayName:
+            (profile?.display_name as string | null | undefined)?.trim() ||
+            user.email?.split("@")[0] ||
+            "Navigator",
+        },
+        voyages,
+      })
+    }
+
+    load()
+  }, [router])
+
+  if (!data) {
+    return (
+      <main className="relative flex min-h-screen items-center justify-center bg-[#061421] text-[#f4efe3]">
+        <p className="text-[0.72rem] uppercase tracking-[0.32em] text-[#d1c6aa]/60">
+          Loading your ledger…
+        </p>
+      </main>
+    )
   }
 
+  const { user, voyages } = data
   const voyageCount = voyages.length
   const latestVoyage = voyages[0] ?? null
 
@@ -37,7 +103,7 @@ export default async function DashboardPage() {
             <Link href="/" className={buttonVariants({ variant: "outline", size: "sm" })}>
               Public map
             </Link>
-            <Link href="/dashboard/voyages/new" className={buttonVariants({ size: "sm" })}>
+            <Link href="/voyages/new" className={buttonVariants({ size: "sm" })}>
               New voyage
             </Link>
           </div>
@@ -49,7 +115,7 @@ export default async function DashboardPage() {
               variant="outline"
               className="border-[#8ed3ef]/30 bg-white/5 px-3 py-1.5 text-[#8ed3ef]"
             >
-              Navigator {user.displayName}
+              Navigator {user!.displayName}
             </Badge>
             <h1 className="mt-5 text-5xl font-semibold leading-[0.92] tracking-[-0.05em] text-[#fff7e8] sm:text-6xl">
               Your voyage ledger keeps every route ready for the public chart.
@@ -97,7 +163,7 @@ export default async function DashboardPage() {
                 Recent passages
               </h2>
             </div>
-            <Link href="/dashboard/voyages/new" className={buttonVariants({ variant: "outline", size: "lg" })}>
+            <Link href="/voyages/new" className={buttonVariants({ variant: "outline", size: "lg" })}>
               Create another voyage
             </Link>
           </div>
@@ -143,11 +209,19 @@ export default async function DashboardPage() {
                       </div>
                     </div>
                   </CardContent>
-                  <div className="flex items-center justify-between border-t border-white/8 px-4 py-4 text-xs uppercase tracking-[0.24em] text-[#d7ccb5]/78">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/8 px-4 py-4 text-xs uppercase tracking-[0.24em] text-[#d7ccb5]/78">
                     <span>Created {formatDate(voyage.createdAt)}</span>
-                    <Link href={`/voyages/${voyage.id}`} className="text-[#8ed3ef] transition hover:text-[#a8def1]">
-                      Open voyage
-                    </Link>
+                    <div className="flex items-center gap-3">
+                      <Link
+                        href={`/dashboard/voyages/${voyage.id}/publish`}
+                        className="text-[#f4c776] transition hover:text-[#f8ddb0]"
+                      >
+                        Record signal
+                      </Link>
+                      <Link href={`/voyages/${voyage.id}`} className="text-[#8ed3ef] transition hover:text-[#a8def1]">
+                        Open voyage
+                      </Link>
+                    </div>
                   </div>
                 </Card>
               ))}
@@ -159,11 +233,11 @@ export default async function DashboardPage() {
                   No voyages yet
                 </CardTitle>
                 <CardDescription className="text-sm leading-7 text-[#c7d3dc]">
-                  Create the first route and the dashboard will start reading like a captain’s logbook.
+                  Create the first route and the dashboard will start reading like a captain's logbook.
                 </CardDescription>
               </CardHeader>
               <CardContent className="pb-6">
-                <Link href="/dashboard/voyages/new" className={buttonVariants({ size: "lg" })}>
+                <Link href="/voyages/new" className={buttonVariants({ size: "lg" })}>
                   Start a voyage
                 </Link>
               </CardContent>

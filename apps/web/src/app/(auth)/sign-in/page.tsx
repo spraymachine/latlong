@@ -1,3 +1,7 @@
+"use client"
+
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -5,17 +9,38 @@ import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { createBrowserSupabaseClient } from "@/lib/supabase/browser"
 
-import { signInAction } from "../actions"
+export default function SignInPage() {
+  const router = useRouter()
+  const [error, setError] = useState<string | null>(null)
+  const [pending, setPending] = useState(false)
 
-type SignInPageProps = {
-  searchParams?: {
-    error?: string
+  async function handleSignIn(formData: FormData) {
+    setPending(true)
+    setError(null)
+
+    const email = String(formData.get("email") ?? "").trim()
+    const password = String(formData.get("password") ?? "")
+
+    if (!email || !password) {
+      setError("Enter a valid email and password.")
+      setPending(false)
+      return
+    }
+
+    const supabase = createBrowserSupabaseClient()
+    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
+
+    if (authError) {
+      setError(authError.message || "Could not sign you in.")
+      setPending(false)
+      return
+    }
+
+    router.push("/dashboard")
+    router.refresh()
   }
-}
-
-export default function SignInPage({ searchParams }: SignInPageProps) {
-  const errorMessage = searchParams?.error ?? null
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#061421] text-[#f4efe3]">
@@ -66,14 +91,14 @@ export default function SignInPage({ searchParams }: SignInPageProps) {
           </CardHeader>
 
           <CardContent className="pt-6">
-            {errorMessage ? (
+            {error ? (
               <Alert className="mb-5 border-[#f0b86a]/25 bg-[#f0b86a]/8 text-[#fff7e8]">
                 <AlertTitle>Could not sign in</AlertTitle>
-                <AlertDescription>{errorMessage}</AlertDescription>
+                <AlertDescription>{error}</AlertDescription>
               </Alert>
             ) : null}
 
-            <form action={signInAction} className="grid gap-5">
+            <form action={handleSignIn} className="grid gap-5">
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -102,10 +127,11 @@ export default function SignInPage({ searchParams }: SignInPageProps) {
 
               <Button
                 type="submit"
+                disabled={pending}
                 size="lg"
                 className="mt-1 bg-[#8ed3ef] text-[#03202d] hover:bg-[#a8def1]"
               >
-                Sign in
+                {pending ? "Signing in…" : "Sign in"}
               </Button>
             </form>
 
