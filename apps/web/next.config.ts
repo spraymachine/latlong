@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 import path from "node:path";
 
 const nextConfig: NextConfig = {
+  output: "export",
+  basePath: "/latlong",
+  images: { unoptimized: true },
   allowedDevOrigins: ["127.0.0.1"],
   turbopack: {
     root: path.resolve(__dirname, "../.."),
