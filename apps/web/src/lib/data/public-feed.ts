@@ -351,9 +351,12 @@ async function queryPublicVoyage(voyageId: string) {
 }
 
 export async function getPublicFeed() {
-  const { supabase, rows } = await queryPublicVoyages();
-
-  return [...createRequestMockVoyages(), ...rows.map((row) => mapVoyageRow(supabase, row))];
+  try {
+    const { supabase, rows } = await queryPublicVoyages();
+    return [...createRequestMockVoyages(), ...rows.map((row) => mapVoyageRow(supabase, row))];
+  } catch {
+    return createRequestMockVoyages();
+  }
 }
 
 export async function getPublicVoyage(voyageId: string) {
@@ -361,7 +364,10 @@ export async function getPublicVoyage(voyageId: string) {
     return createMockVoyage(voyageId);
   }
 
-  const { supabase, row } = await queryPublicVoyage(voyageId);
-
-  return row ? mapVoyageRow(supabase, row) : null;
+  try {
+    const { supabase, row } = await queryPublicVoyage(voyageId);
+    return row ? mapVoyageRow(supabase, row) : null;
+  } catch {
+    return null;
+  }
 }
