@@ -290,7 +290,7 @@ export function PostForm({
             </p>
             <div className="flex gap-3 sm:justify-end">
               <Link
-                href={`/voyages/${voyageId}`}
+                href={`/voyages?id=${voyageId}`}
                 className={buttonVariants({
                   variant: "outline",
                   size: "lg",

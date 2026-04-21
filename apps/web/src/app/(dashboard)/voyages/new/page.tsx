@@ -76,7 +76,7 @@ export default function NewVoyagePage() {
       return
     }
 
-    router.push(`/voyages/${data.id}`)
+    router.push(`/voyages?id=${data.id}`)
   }
 
   return (

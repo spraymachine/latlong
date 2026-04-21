@@ -83,5 +83,5 @@ export async function createVoyageAction(formData: FormData) {
     redirectWithError("/voyages/new", error?.message || "Could not create that voyage.")
   }
 
-  redirect(`/voyages/${data.id}`)
+  redirect(`/voyages?id=${data.id}`)
 }

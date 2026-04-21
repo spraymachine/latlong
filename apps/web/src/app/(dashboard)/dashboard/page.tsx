@@ -213,12 +213,12 @@ export default function DashboardPage() {
                     <span>Created {formatDate(voyage.createdAt)}</span>
                     <div className="flex items-center gap-3">
                       <Link
-                        href={`/dashboard/voyages/${voyage.id}/publish`}
+                        href={`/publish?voyageId=${voyage.id}`}
                         className="text-[#f4c776] transition hover:text-[#f8ddb0]"
                       >
                         Record signal
                       </Link>
-                      <Link href={`/voyages/${voyage.id}`} className="text-[#8ed3ef] transition hover:text-[#a8def1]">
+                      <Link href={`/voyages?id=${voyage.id}`} className="text-[#8ed3ef] transition hover:text-[#a8def1]">
                         Open voyage
                       </Link>
                     </div>
