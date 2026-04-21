@@ -1,21 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { createClient } from "@supabase/supabase-js";
 
 import { PublicOceanMap } from "@/components/map/public-ocean-map";
 import { getPublicVoyage } from "@/lib/data/public-feed";
 
-export async function generateStaticParams() {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    return [];
-  }
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  );
-  const { data } = await supabase.from("voyages").select("id");
-  return (data ?? []).map(({ id }: { id: string }) => ({ voyageId: id }));
+export function generateStaticParams() {
+  return [];
 }
 
 type VoyageDetailPageProps = {
